@@ -1,0 +1,99 @@
+.members-list {
+  animation: fadeIn 0.3s ease;
+}
+
+/* Členové seznamu (dogenerováno AI) */
+.members-section {
+  margin-bottom: var(--space-lg);
+}
+
+.members-list-ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.member-item:hover {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.member-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.btn-remove {
+  padding: var(--space-sm) var(--space-lg);
+  background-color: transparent;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.btn-remove:hover {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+/* Opustit seznam Section */
+.leave-section {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Přidat člena seznamu */
+.add-member-section {
+  margin-bottom: 0;
+}
+
+.add-member-form {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.add-member-form .form-control {
+  flex: 1;
+}
+ 
+/* Responzivita */
+@media (max-width: 768px) {
+  .add-member-form {
+    flex-direction: column;
+  }
+
+  .member-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+  }
+
+  .btn-remove {
+    width: 100%;
+  }
+}

@@ -1,0 +1,28 @@
+/* ErrorMessage Styles */
+
+.error-message-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    min-height: 200px;
+    text-align: center;
+}
+
+.error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-title {
+    color: #d32f2f;
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.error-text {
+    color: #666;
+    margin-bottom: 1.5rem;
+    max-width: 400px;
+}
