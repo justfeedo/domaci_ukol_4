@@ -1,16 +1,23 @@
 // controller pro shopping listy
 // obsahuje logiku pro vsechny endpointy
-// pouziva in-memory data store pro persistenci behem session
+// pouziva mongodb (mongoose) pro persistenci dat
 
-const db = require('../data/mockData');
+const ShoppingList = require('../models/ShoppingList');
 
 // vytvoreni shopping listu - POST /shoppingList/create
-const createShoppingList = (req, res, next) => {
+const createShoppingList = async (req, res, next) => {
   try {
     const { name } = req.body;
     const ownerId = req.user.id;
 
-    const newList = db.createList(name, ownerId);
+    // vytvorime novy seznam v mongodb
+    const newList = await ShoppingList.create({
+      name,
+      ownerId,
+      members: [ownerId],  // owner je automaticky prvnim clenem
+      items: [],
+      archived: false
+    });
 
     res.status(200).json({
       status: 200,
@@ -23,16 +30,25 @@ const createShoppingList = (req, res, next) => {
 };
 
 // ziskani shopping listu - GET /shoppingList/get?id=...
-const getShoppingList = (req, res, next) => {
+const getShoppingList = async (req, res, next) => {
   try {
     const { id } = req.query;
 
-    const list = db.getListById(id);
+    // najdeme seznam v mongodb
+    const list = await ShoppingList.findById(id);
 
     if (!list) {
       return res.status(404).json({
         status: 404,
         message: 'Shopping list not found'
+      });
+    }
+
+    // zkontrolujeme pristup (owner nebo member)
+    if (!list.hasAccess(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied'
       });
     }
 
@@ -46,12 +62,24 @@ const getShoppingList = (req, res, next) => {
   }
 };
 
-// seznam shopping listu - GET /shoppingList/list?archived=false&pageInfo.pageIndex=0&pageInfo.pageSize=10
-const listShoppingLists = (req, res, next) => {
+// seznam shopping listu - GET /shoppingList/list?archived=false
+const listShoppingLists = async (req, res, next) => {
   try {
     const archived = req.query.archived === 'true';
+    const userId = req.user.id;
 
-    const lists = db.getAllLists(archived);
+    // najdeme vsechny seznamy kde je uzivatel owner nebo member
+    const lists = await ShoppingList.find({
+      $and: [
+        { archived },
+        {
+          $or: [
+            { ownerId: userId },
+            { members: userId }
+          ]
+        }
+      ]
+    }).sort({ createdAt: -1 });  // nejnovejsi prvni
 
     res.status(200).json({
       status: 200,
@@ -71,22 +99,35 @@ const listShoppingLists = (req, res, next) => {
 };
 
 // aktualizace shopping listu - PUT /shoppingList/update
-const updateShoppingList = (req, res, next) => {
+const updateShoppingList = async (req, res, next) => {
   try {
     const { id, name } = req.body;
 
-    const updatedList = db.updateList(id, { name });
+    // najdeme seznam
+    const list = await ShoppingList.findById(id);
 
-    if (!updatedList) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
         message: 'Shopping list not found'
       });
     }
 
+    // pouze owner muze updatovat
+    if (!list.isOwner(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only owner can update shopping list'
+      });
+    }
+
+    // updatneme nazev
+    list.name = name;
+    await list.save();
+
     res.status(200).json({
       status: 200,
-      dtoOut: updatedList,
+      dtoOut: list,
       dtoIn: { id, name }
     });
   } catch (error) {
@@ -95,18 +136,30 @@ const updateShoppingList = (req, res, next) => {
 };
 
 // smazani shopping listu - DELETE /shoppingList/delete?id=...
-const deleteShoppingList = (req, res, next) => {
+const deleteShoppingList = async (req, res, next) => {
   try {
     const { id } = req.query;
 
-    const deleted = db.deleteList(id);
+    // najdeme seznam
+    const list = await ShoppingList.findById(id);
 
-    if (!deleted) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
         message: 'Shopping list not found'
       });
     }
+
+    // pouze owner muze smazat
+    if (!list.isOwner(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only owner can delete shopping list'
+      });
+    }
+
+    //smazeme z databaze
+    await ShoppingList.findByIdAndDelete(id);
 
     res.status(200).json({
       status: 200,
@@ -122,22 +175,35 @@ const deleteShoppingList = (req, res, next) => {
 };
 
 // archivace shopping listu - PATCH /shoppingList/archive
-const archiveShoppingList = (req, res, next) => {
+const archiveShoppingList = async (req, res, next) => {
   try {
     const { id, archived } = req.body;
 
-    const updatedList = db.updateList(id, { archived });
+    // najdeme seznam
+    const list = await ShoppingList.findById(id);
 
-    if (!updatedList) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
         message: 'Shopping list not found'
       });
     }
 
+    // pouze owner muze archivovat
+    if (!list.isOwner(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only owner can archive shopping list'
+      });
+    }
+
+    // nastavime archived flag
+    list.archived = archived;
+    await list.save();
+
     res.status(200).json({
       status: 200,
-      dtoOut: updatedList,
+      dtoOut: list,
       dtoIn: { id, archived }
     });
   } catch (error) {
@@ -146,18 +212,41 @@ const archiveShoppingList = (req, res, next) => {
 };
 
 // pridani clena - POST /shoppingList/addMember
-const addMember = (req, res, next) => {
+const addMember = async (req, res, next) => {
   try {
     const { shoppingListId, userId } = req.body;
 
-    const added = db.addMemberToList(shoppingListId, userId);
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!added) {
-      return res.status(400).json({
-        status: 400,
-        message: 'Failed to add member (already exists or list not found)'
+    if (!list) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Shopping list not found'
       });
     }
+
+    // pouze owner muze pridavat cleny
+    if (!list.isOwner(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only owner can add members'
+      });
+    }
+
+    // zkontrolujeme, jestli uz neni clenem
+    if (list.isMember(userId)) {
+      return res.status(400).json({
+        status: 400,
+        message: 'User is already a member'
+      });
+    }
+
+    // pridame clena pouzitim $addToSet (prida pouze pokud tam jeste neni)
+    await ShoppingList.findByIdAndUpdate(
+      shoppingListId,
+      { $addToSet: { members: userId } }
+    );
 
     res.status(200).json({
       status: 200,
@@ -174,18 +263,41 @@ const addMember = (req, res, next) => {
 };
 
 // odebrani clena - DELETE /shoppingList/removeMember?shoppingListId=...&userId=...
-const removeMember = (req, res, next) => {
+const removeMember = async (req, res, next) => {
   try {
     const { shoppingListId, userId } = req.query;
 
-    const removed = db.removeMemberFromList(shoppingListId, userId);
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!removed) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
-        message: 'Member not found or list not found'
+        message: 'Shopping list not found'
       });
     }
+
+    // pouze owner muze odebirat cleny
+    if (!list.isOwner(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Only owner can remove members'
+      });
+    }
+
+    // zkontrolujeme, jestli je clenem
+    if (!list.isMember(userId)) {
+      return res.status(404).json({
+        status: 404,
+        message: 'User is not a member'
+      });
+    }
+
+    // odebereme clena pouzitim $pull
+    await ShoppingList.findByIdAndUpdate(
+      shoppingListId,
+      { $pull: { members: userId } }
+    );
 
     res.status(200).json({
       status: 200,
@@ -202,19 +314,34 @@ const removeMember = (req, res, next) => {
 };
 
 // opusteni seznamu - POST /shoppingList/leave
-const leaveMember = (req, res, next) => {
+const leaveMember = async (req, res, next) => {
   try {
     const { shoppingListId } = req.body;
     const userId = req.user.id;
 
-    const removed = db.removeMemberFromList(shoppingListId, userId);
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!removed) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
-        message: 'You are not a member or list not found'
+        message: 'Shopping list not found'
       });
     }
+
+    // zkontrolujeme, jestli je clenem
+    if (!list.isMember(userId)) {
+      return res.status(404).json({
+        status: 404,
+        message: 'You are not a member of this list'
+      });
+    }
+
+    // odebereme sebe sama
+    await ShoppingList.findByIdAndUpdate(
+      shoppingListId,
+      { $pull: { members: userId } }
+    );
 
     res.status(200).json({
       status: 200,
@@ -231,22 +358,44 @@ const leaveMember = (req, res, next) => {
 };
 
 // pridani polozky - POST /shoppingList/addItem
-const addItem = (req, res, next) => {
+const addItem = async (req, res, next) => {
   try {
     const { shoppingListId, name } = req.body;
 
-    const newItem = db.addItemToList(shoppingListId, name);
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!newItem) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
         message: 'Shopping list not found'
       });
     }
 
+    // zkontrolujeme pristup
+    if (!list.hasAccess(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied'
+      });
+    }
+
+    // vytvorime novou polozku
+    const newItem = {
+      name,
+      resolved: false
+    };
+
+    // pridame polozku
+    list.items.push(newItem);
+    await list.save();
+
+    // vratime nove pridanou polozku (posledni v array)
+    const addedItem = list.items[list.items.length - 1];
+
     res.status(200).json({
       status: 200,
-      dtoOut: newItem,
+      dtoOut: addedItem,
       dtoIn: { shoppingListId, name }
     });
   } catch (error) {
@@ -255,18 +404,33 @@ const addItem = (req, res, next) => {
 };
 
 // odebrani polozky - DELETE /shoppingList/removeItem?shoppingListId=...&itemId=...
-const removeItem = (req, res, next) => {
+const removeItem = async (req, res, next) => {
   try {
     const { shoppingListId, itemId } = req.query;
 
-    const removed = db.removeItemFromList(shoppingListId, itemId);
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!removed) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
-        message: 'Item not found or list not found'
+        message: 'Shopping list not found'
       });
     }
+
+    // zkontrolujeme pristup
+    if (!list.hasAccess(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied'
+      });
+    }
+
+    // odebereme polozku pouzitim $pull na subdocument
+    await ShoppingList.findByIdAndUpdate(
+      shoppingListId,
+      { $pull: { items: { _id: itemId } } }
+    );
 
     res.status(200).json({
       status: 200,
@@ -283,22 +447,45 @@ const removeItem = (req, res, next) => {
 };
 
 // oznaceni polozky jako vyresene - PATCH /shoppingList/resolveItem
-const resolveItem = (req, res, next) => {
+const resolveItem = async (req, res, next) => {
   try {
     const { shoppingListId, itemId, resolved } = req.body;
 
-    const updatedItem = db.updateItemInList(shoppingListId, itemId, { resolved });
+    // najdeme seznam
+    const list = await ShoppingList.findById(shoppingListId);
 
-    if (!updatedItem) {
+    if (!list) {
       return res.status(404).json({
         status: 404,
-        message: 'Item not found or list not found'
+        message: 'Shopping list not found'
       });
     }
 
+    // zkontrolujeme pristup
+    if (!list.hasAccess(req.user.id)) {
+      return res.status(403).json({
+        status: 403,
+        message: 'Access denied'
+      });
+    }
+
+    // najdeme polozku
+    const item = list.items.id(itemId);
+
+    if (!item) {
+      return res.status(404).json({
+        status: 404,
+        message: 'Item not found'
+      });
+    }
+
+    // updatneme resolved status
+    item.resolved = resolved;
+    await list.save();
+
     res.status(200).json({
       status: 200,
-      dtoOut: updatedItem,
+      dtoOut: item,
       dtoIn: { shoppingListId, itemId, resolved }
     });
   } catch (error) {

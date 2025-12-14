@@ -1,0 +1,397 @@
+{
+    "info": {
+        "name": "Shopping List API",
+        "_postman_id": "shopping-list-api-2025",
+        "description": "Complete API for shopping list management with MongoDB persistence",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Create Shopping List",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"name\": \"Týdenní nákup\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/create",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "create"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Get Shopping List",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/get?id={{list_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "get"
+                    ],
+                    "query": [
+                        {
+                            "key": "id",
+                            "value": "{{list_id}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "List Shopping Lists",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/list?archived=false",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "list"
+                    ],
+                    "query": [
+                        {
+                            "key": "archived",
+                            "value": "false"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Update Shopping List",
+            "request": {
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"{{list_id}}\",\n  \"name\": \"Aktualizovaný název\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/update",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "update"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Delete Shopping List",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/delete?id={{list_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "delete"
+                    ],
+                    "query": [
+                        {
+                            "key": "id",
+                            "value": "{{list_id}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Archive Shopping List",
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"{{list_id}}\",\n  \"archived\": true\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/archive",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "archive"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Add Member",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"shoppingListId\": \"{{list_id}}\",\n  \"userId\": \"user-002\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/addMember",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "addMember"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Remove Member",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/removeMember?shoppingListId={{list_id}}&userId=user-002",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "removeMember"
+                    ],
+                    "query": [
+                        {
+                            "key": "shoppingListId",
+                            "value": "{{list_id}}"
+                        },
+                        {
+                            "key": "userId",
+                            "value": "user-002"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Leave Shopping List",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-002"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"shoppingListId\": \"{{list_id}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/leave",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "leave"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Add Item",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"shoppingListId\": \"{{list_id}}\",\n  \"name\": \"Mléko\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/addItem",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "addItem"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Remove Item",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/removeItem?shoppingListId={{list_id}}&itemId={{item_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "removeItem"
+                    ],
+                    "query": [
+                        {
+                            "key": "shoppingListId",
+                            "value": "{{list_id}}"
+                        },
+                        {
+                            "key": "itemId",
+                            "value": "{{item_id}}"
+                        }
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Resolve Item",
+            "request": {
+                "method": "PATCH",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "X-User-Id",
+                        "value": "user-001"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"shoppingListId\": \"{{list_id}}\",\n  \"itemId\": \"{{item_id}}\",\n  \"resolved\": true\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/shoppingList/resolveItem",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "shoppingList",
+                        "resolveItem"
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://localhost:3001",
+            "type": "string"
+        },
+        {
+            "key": "list_id",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "item_id",
+            "value": "",
+            "type": "string"
+        }
+    ]
+}
